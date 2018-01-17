@@ -12,3 +12,11 @@
   connection: local
   tasks:
   - nxos_ntp_auth: state=present key_id=32 md5string=hello trusted_key=true auth_type=encrypt host= {{ inventory_hostname }}
+  
+- name: "SET NTP SOURCE"
+  hosts: all
+  connection: local
+  ios_config:
+    provider: "{{ provider }}"
+    lines:
+      - "{{ ntp_source }}"
