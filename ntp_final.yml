@@ -1,0 +1,78 @@
+---
+
+- name:  Configuring features required
+  hosts:  spine
+  tasks:
+    - name: Configuring feature interface-vlan
+      nxos_command:
+        host: "{{ inventory_hostname }}"
+        type: config
+        command: "feature interface-vlan"
+
+- name:  Configure VLANs
+  hosts: all
+  tasks:
+  - nxos_vlan: vlan_id=100 host={{ inventory_hostname }}
+  - nxos_vlan: vlan_id=200 host={{ inventory_hostname }}
+
+- name:  Configure interfaces on spine
+  hosts: spine
+  tasks:
+  - nxos_interface: interface=Ethernet2/1 mode=layer3 admin_state=up host={{ inventory_hostname }}
+  - nxos_interface: interface=Ethernet2/2 mode=layer2 admin_state=up host={{ inventory_hostname }}
+  - nxos_interface: interface=vlan{{ vlan }} mode=layer3 admin_state=up host={{ inventory_hostname }}
+  - nxos_ipv4_interface: interface=Ethernet2/1 ip_addr={{ l3_ip }} mask=24 host={{ inventory_hostname }}
+  - nxos_switchport: interface=eth2/2 mode=trunk host={{ inventory_hostname }}
+  - nxos_ipv4_interface: interface=vlan{{ vlan }} ip_addr={{ svi_ip }} mask=24 host={{ inventory_hostname }}
+
+- name:  Configure interfaces on spine
+  hosts: spine
+  tasks:
+  - nxos_interface: interface=Ethernet2/1 mode=layer3 admin_state=up host={{ inventory_hostname }}
+  - nxos_interface: interface=Ethernet2/2 mode=layer2 admin_state=up host={{ inventory_hostname }}
+  - nxos_interface: interface=vlan{{ vlan }} mode=layer3 admin_state=up host={{ inventory_hostname }}
+  - nxos_ipv4_interface: interface=Ethernet2/1 ip_addr={{ l3_ip }} mask=24 host={{ inventory_hostname }}
+  - nxos_switchport: interface=eth2/2 mode=trunk host={{ inventory_hostname }}
+  - nxos_ipv4_interface: interface=vlan{{ vlan }} ip_addr={{ svi_ip }} mask=24 host={{ inventory_hostname }}
+
+- name:  Configure interfaces on leaves
+  hosts:  leaf
+  tasks:
+  - nxos_interface: interface=Ethernet2/1 mode=layer2 admin_state=up host={{ inventory_hostname }}
+  - nxos_interface: interface=Ethernet2/2 mode=layer2 admin_state=up host={{ inventory_hostname }}
+  - nxos_switchport: interface=Ethernet2/1 mode=trunk host={{ inventory_hostname }}
+  - nxos_switchport: interface=Ethernet2/2 mode=access access_vlan={{ access_vlan }} host={{ inventory_hostname $
+
+- name: Install static routes
+  hosts: spine
+  tasks:
+  - nxos_static_routes: prefix={{ static_rt }} next_hop={{ nh }} host={{ inventory_hostname }}
+  
+- name: Set NTP Server
+  hosts: n9k1
+  tasks:
+  - nxos_ntp: server=1.2.3.4 key_id=32 prefer=enabled host= {{ inventory_hostname }}
+
+- name: NTP Auth
+  hosts: n9k1
+  tasks:
+  - nxos_ntp_auth: state=present key_id=32 md5string=hello trusted_key=true auth_type=encrypt host= {{ inventory$
+
+- name: NTP Options
+  hosts: n9k1
+  tasks:
+  - nxos_ntp_options: master=true stratum=12 logging=false host={{ inventory_hostname }}
+
+- name: VTP
+  hosts: n9k1
+  tasks:
+  #sets VTP parameters
+  - nxos_vtp: domain=ntc vtp_password=vpass version=1 host={{ inventory_hostname }}
+  #change VTP password
+  #- nxos_vtp: state=absent ntp_password=vpass2 host={{ inventory_hostname }}
+
+- name: Static Route
+  hosts: all
+  tasks:
+  #Static route with tag and preference set
+  - nxos_static_routes: prefix=1.1.1.0/24 next_hop=2.2.2.2 tag=90 pref=80 host={{ inventory_hostname }}
