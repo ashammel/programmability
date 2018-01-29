@@ -13,29 +13,23 @@
   tasks:
   - nxos_ntp_auth: state=present key_id=32 md5string=hello trusted_key=true auth_type=encrypt host= {{ inventory_hostname }}
   
-- name: "SET NTP SOURCE"
+- name: "NTP OPTIONS"
   hosts: all
   connection: local
-  ios_config:
-    provider: "{{ provider }}"
-    lines:
-      - "{{ ntp_source }}"
-      
-- name: "GET NTP CONFIG"
-  hosts: all
+  tasks:
+  - nxos_ntp_options: master=true stratum=12 logging=false host={{ inventory_hostname }}
+  
+  - name: vtp example
+  hosts: n9k1
   connection: local
-  ios_config:
-    provider: "{{ provider }}"
-    commands:
-      - "show running-config | include clock timezone"
-      - "show running-config | include clock summer-time"
-      - "show running-config | include ntp source"
-      - "show running-config | include ntp server"
-      
-- name: "SET TIMEZONE"
-  when: "(timezone is defined) and (timezone != get_ntp_config.stdout_lines[0][0])"
-  register: set_timezone
-  ios_config: 
-    provider: "{{ provider }}"
-    lines: 
-      - "{{ timezone }}"
+  gather_facts: no
+
+  tasks:
+
+    # set all three parameters
+    - name: "Set all three parameters"
+    - nxos_vtp: domain=ntc vtp_password=vpass version=1 host={{ inventory_hostname }}
+
+    # remove password
+    - name: "Remove vtp password"
+    nxos_vtp: state=absent vtp_password=vpass2 host={{ inventory_hostname }}
